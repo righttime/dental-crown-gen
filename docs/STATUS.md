@@ -1,13 +1,13 @@
 # Project Status
 
-**Last updated:** 2026-06-05 (kickoff + first paper read)
+**Last updated:** 2026-06-06 (second paper read)
 
 ## Current state
 - [x] Concept defined (intra-oral scan → printable crown/bridge mesh)
 - [x] Sub-tasks identified (5 steps)
 - [x] Hypotheses drafted (5)
 - [x] Architecture draft (training = workstation, inference = TBD)
-- [x] Literature survey (Scholar — 1 paper read, see `papers/001-…`)
+- [x] Literature survey (Scholar — 2 papers read, see `papers/001-…` and `papers/002-…`)
 - [ ] Data acquisition plan
 - [ ] Baseline implementation
 - [ ] Custom model dev
@@ -22,3 +22,4 @@
 ## Scholar weekly digest
 
 - **Week of 2026-06-05:** read paper 001 — *3DTeethSeg'22: 3D Teeth Scan Segmentation and Labeling Challenge* (Ben-Hamadou et al., MICCAI 2022 challenge). Key insight: largest public IOS dataset (1,800 scans / 900 patients / 23,999 FDI-labeled teeth) is now downloadable, and every winning method is 2-stage (centroid detection → per-tooth segmentation) — strong empirical support for **H1**. IGIP team's dental-arch-curve post-processing (Bezier fit through centroids used to correct FDI labels) is a direct analogue of the inductive bias we need for **H3** (conditioning on global arch context for outer-surface generation). Concrete action: download the dataset this week, use it as the public-data backbone for sub-task 1. Note in `papers/001-3dteethseg22.md`.
+- **Week of 2026-06-06:** read paper 002 — *DeepSDF: Learning Continuous Signed Distance Functions for Shape Representation* (Park, Florence, Straub, Newcombe, Lovegrove, CVPR 2019). Key insight: **strong support for H4** (implicit SDF > explicit mesh). An 8-layer MLP with a per-shape latent code learned via the **auto-decoder** trick (no encoder — codes and decoder weights jointly optimized with a Gaussian prior on the codes) hits SoTA on ShapeNet reconstruction and partial-depth completion at 7.4 MB with watertight surfaces and analytic normals. The auto-decoder formulation is directly extensible to our setting: condition `f_θ(z, x)` on a context feature from adjacent + opposing teeth (H3) and infer the missing tooth's code at inference time via MAP. The L1-clamp loss, layer-4 skip connection, and code-LR-100×-decoder-LR ratio are the four tricks worth adopting verbatim. Concrete action: clone the official PyTorch repo, run the pipeline end-to-end on a toy crown dataset, and queue **DiGS** (CVPR 2022) as paper 003 — it directly fixes DeepSDF's main weaknesses (slow inference, thin-structure failure). Note in `papers/002-deepsdf.md`.
