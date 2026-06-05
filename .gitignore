@@ -1,0 +1,29 @@
+# Data
+data/raw/
+data/processed/
+data/external/
+*.stl
+*.ply
+*.obj
+*.stp
+*.step
+
+# Models (large)
+*.pth
+*.pt
+*.onnx
+*.pkl
+*.h5
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# OS
+.DS_Store
+*.swp
