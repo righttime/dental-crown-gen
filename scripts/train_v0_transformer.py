@@ -117,7 +117,7 @@ class TransformerDecoder(nn.Module):
 
 
 class CrownGenTransformer(nn.Module):
-    def __init__(self, n_fdi=28, n_points=4096, k=16, encoder_dim=1024, knn_dim=64, fdi_dim=64, dec_dim=512, n_layers=4):
+    def __init__(self, n_fdi=28, n_points=1024, k=16, encoder_dim=512, knn_dim=64, fdi_dim=64, dec_dim=256, n_layers=2):
         super().__init__()
         self.n_points = n_points
         self.encoder = PointNetEncoder(out_dim=encoder_dim)
@@ -127,7 +127,7 @@ class CrownGenTransformer(nn.Module):
         self.ctx_proj = nn.Linear(encoder_dim + knn_dim + fdi_dim, dec_dim)
         # Query projection: just positional
         self.q_proj = nn.Linear(dec_dim, dec_dim)
-        self.decoder = TransformerDecoder(dim=dec_dim, n_layers=n_layers, n_heads=8, n_points=n_points)
+        self.decoder = TransformerDecoder(dim=dec_dim, n_layers=n_layers, n_heads=4, n_points=n_points)
         # Output head: per-point -> 3D offset
         self.head = nn.Linear(dec_dim, 3)
 
@@ -164,7 +164,7 @@ def evaluate(model, loader, device):
     return np.mean(cds), np.std(cds)
 
 
-def main(split_path, n_epochs=20, batch_size=16, lr=5e-4, device='mps', n_points=4096, out_dir='models/v0_transformer', max_train=None, max_val=None):
+def main(split_path, n_epochs=20, batch_size=16, lr=5e-4, device='mps', n_points=1024, out_dir='models/v0_transformer', max_train=None, max_val=None):
     with open(split_path) as f:
         s = json.load(f)
     train_files = s['train_files']
@@ -234,7 +234,9 @@ if __name__ == "__main__":
     p.add_argument('--out-dir', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/models/v0_transformer')
     p.add_argument('--max-train', type=int, default=None)
     p.add_argument('--max-val', type=int, default=None)
+    p.add_argument('--n-points', type=int, default=1024)
     args = p.parse_args()
     main(args.split, n_epochs=args.epochs, batch_size=args.batch_size,
          lr=args.lr, device=args.device, out_dir=args.out_dir,
-         max_train=args.max_train, max_val=args.max_val)
+         max_train=args.max_train, max_val=args.max_val,
+         n_points=args.n_points)

@@ -27,6 +27,11 @@ def chamfer_torch(a, b):
     return d.min(dim=2).values.mean(dim=1) + d.min(dim=1).values.mean(dim=1)
 
 
+def centroid_l2(a, b):
+    """L2 distance between point cloud centroids. Forces position-aware output."""
+    return (a.mean(dim=1) - b.mean(dim=1)).norm(dim=-1)
+
+
 class V0Dataset(Dataset):
     def __init__(self, files, n_points=4096):
         self.files = files
@@ -99,6 +104,7 @@ class CrownGenModel(nn.Module):
 def evaluate(model, loader, device):
     model.eval()
     cds = []
+    cents = []
     with torch.no_grad():
         for batch in loader:
             partial = batch['partial'].to(device)
@@ -106,7 +112,9 @@ def evaluate(model, loader, device):
             fdi_idx = batch['fdi_idx'].to(device)
             pred = model(partial, fdi_idx)
             cd = chamfer_torch(pred, target)
+            cent = centroid_l2(pred, target)
             cds.extend(cd.cpu().tolist())
+            cents.extend(cent.cpu().tolist())
     return np.mean(cds), np.std(cds)
 
 
@@ -147,20 +155,33 @@ def main(split_path, n_epochs=20, batch_size=32, lr=1e-3, device='mps', n_points
             target = batch['target'].to(device)
             fdi_idx = batch['fdi_idx'].to(device)
             pred = model(partial, fdi_idx)
-            loss = chamfer_torch(pred, target).mean()
+            cd = chamfer_torch(pred, target)
+            cent = centroid_l2(pred, target)
+            loss = (cd + 0.5 * cent).mean()  # weight centroid loss 0.5x
             opt.zero_grad()
             loss.backward()
             opt.step()
-            train_cds.append(loss.item())
+            train_cds.append(cd.mean().item())
         train_cd = np.mean(train_cds)
         train_time = time.time() - t0
 
         # Validate
         val_cd, val_std = evaluate(model, val_loader, device)
         elapsed = time.time() - t0
+        # Also compute centroid distance on val
+        model.eval()
+        cents_val = []
+        with torch.no_grad():
+            for batch in val_loader:
+                partial = batch['partial'].to(device)
+                target = batch['target'].to(device)
+                fdi_idx = batch['fdi_idx'].to(device)
+                pred = model(partial, fdi_idx)
+                cents_val.extend(centroid_l2(pred, target).cpu().tolist())
+        mean_cent = np.mean(cents_val)
         print(f"Epoch {epoch+1:3d}/{n_epochs} | train CD: {train_cd*1000:.2f} | "
               f"val CD: {val_cd*1000:.2f} ± {val_std*1000:.2f} "
-              f"(×1e-3) | {train_time:.1f}s/epoch")
+              f"val centErr: {mean_cent:.3f} (×1e-3) | {train_time:.1f}s/epoch")
 
         # Save best
         if val_cd < best_val:
