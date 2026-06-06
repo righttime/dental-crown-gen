@@ -11,8 +11,8 @@ import glob
 import numpy as np
 import plotly.graph_objects as go
 
-DATA_DIR = "/Volumes/extSSD/dental-data/v0_dataset"
-OUT = "/Users/alf/Projects/AlfResearch/dental-crown-gen/docs/figures/v0_interactive.html"
+DATA_DIR = "../dental-data/v0_dataset"
+OUT = "./docs/figures/v0_interactive.html"
 N_POINTS = 1024
 
 

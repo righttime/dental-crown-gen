@@ -197,12 +197,12 @@ def main(split_path, n_epochs=20, batch_size=32, lr=1e-3, device='mps', n_points
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument('--split', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/data/v0_split.json')
+    p.add_argument('--split', default='./data/v0_split.json')
     p.add_argument('--epochs', type=int, default=20)
     p.add_argument('--batch-size', type=int, default=32)
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--device', default='mps', choices=['cpu', 'mps', 'cuda'])
-    p.add_argument('--out-dir', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/models/v0_simple')
+    p.add_argument('--out-dir', default='./models/v0_simple')
     p.add_argument('--max-train', type=int, default=None)
     p.add_argument('--max-val', type=int, default=None)
     args = p.parse_args()

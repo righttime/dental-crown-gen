@@ -173,9 +173,9 @@ def main(model_path, split_path, out_path, n_samples=6, device='mps'):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument('--model', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/models/v0_simple/best.pt')
-    p.add_argument('--split', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/data/v0_split.json')
-    p.add_argument('--out', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/docs/figures/v0_predictions.png')
+    p.add_argument('--model', default='./dental-crown-gen/models/v0_simple/best.pt')
+    p.add_argument('--split', default='./dental-crown-gen/data/v0_split.json')
+    p.add_argument('--out', default='./dental-crown-gen/docs/figures/v0_predictions.png')
     p.add_argument('--n-samples', type=int, default=6)
     p.add_argument('--device', default='mps')
     args = p.parse_args()
