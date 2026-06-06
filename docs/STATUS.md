@@ -1,13 +1,13 @@
 # Project Status
 
-**Last updated:** 2026-06-07 00:03 KST (twenty-fifth paper read)
+**Last updated:** 2026-06-07 01:03 KST (twenty-sixth paper read)
 
 ## Current state
 - [x] Concept defined (intra-oral scan → printable crown/bridge mesh)
 - [x] Sub-tasks identified (5 steps)
 - [x] Hypotheses drafted (5)
 - [x] Architecture draft (training = workstation, inference = TBD)
-- [x] Literature survey (Scholar — 25 papers read, see `papers/001-…` through `papers/025-…`)
+- [x] Literature survey (Scholar — 26 papers read, see `papers/001-…` through `papers/026-…`)
 - [ ] Data acquisition plan
 - [ ] Baseline implementation
 - [ ] Custom model dev
@@ -18,6 +18,8 @@
 - Data acquisition: public datasets vs synthetic vs scraping?
 - Compute: cloud GPU (Lambda, RunPod) vs university cluster?
 - 3D format conversion pipeline (OBJ/STL/PLY all in?)
+
+- **Hour 2026-06-07 01:03 KST:** read paper 026 — *Fully Automated Tooth Segmentation and Labeling for Both Full- and Partial-Arch Intraoral Scans Using Deep Learning* (Cao, van Nistelrooij, Vinayahalingam, Radboudumc, Int Dent J 2025). Key insight: **strongest H5 evidence in the reading list** — the +0.197 macro-F1 jump on partial-arch from artificial-partial-arch data augmentation (Model 1 → Model 2) is bigger than any H5 transfer result we've seen; the four cheap tricks (artificial-partials + Stratified-Transformer alignment + FDI-pair-offset MAP postprocessor + real partials) beat every prior SoTA on 3DTeethSeg (Score 0.9870, vs paper 025's 0.94 Dice on imperfect arches). The FDI-aware postprocessor is **a classical dynamic-programming MAP over a multivariate-Gaussian prior on FDI-to-FDI offsets** — a beautiful hybrid AI pattern (deep learning for per-tooth prediction, classical combinatorial inference for global consistency) and a new form of H3 conditioning for the segmentation sub-task. Concrete action: (a) **adopt artificial-partial-arch augmentation as v0 sub-task 1's primary training trick** (1-day preprocessing, OBB-based crop, 90% probability, skewed distribution favoring fewer teeth), expected +0.10-0.20 F1; (b) **adopt FDI-pair-offset postprocessor as v0 final stage** (50 lines of NumPy, $0 compute, +0.005-0.01 macro-IoU free); (c) **defer DL-based alignment module to v1** (Stratified Transformer is overkill for v0, use OBB+curvature-cue heuristic from paper 025); (d) **use 3DTeethSeg 1200/600 split as v0 eval protocol**, target Score ≥ 0.95 v0 / ≥ 0.98 v1; (e) **add a "prepared tooth" augmentation** (random surface trim 10% probability) to handle the highest-error clinical condition Cao identified. Note in `papers/026-cao25-automated-tooth-seg.md`. **Open question for HK: v0 base model — Cao's ToothInstanceNet (newest, best ablation, no code), paper 024 Kunwar (code + Blender postprocessing released), or paper 025 ArchSeg (no code, requires reimplementation)?** Recommendation: pilot all three on 3DTeethSeg 1200/600, 1-week $100 Lambda. **Next paper: TSegNet (Rekik 2022, 3DTeethSeg challenge baseline) for the original 2022 comparison point, or the ToothInstanceNet/DentalNet/Stratified-Transformer trio for the building blocks of Cao's pipeline.**
 
 ## Scholar weekly digest
 
