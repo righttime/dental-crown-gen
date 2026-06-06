@@ -78,20 +78,27 @@ This is the same training architecture as unconditional PVD, just a loss-mask sw
 
 For comparison, LION's AdaGN conditioning requires a separate encoder + cross-attention setup, ~10× more code, and ~3× the compute. The PVD free-points approach is the right v0; AdaGN can be added in v1 if multi-modal sampling becomes a product requirement.
 
-## Open questions for HK
+## v0 decisions locked (HK, 2026-06-06)
 
-1. **Conditioning for v0**: PVD free-points (simple, $50-200) vs LION AdaGN (canonical H2 × H3, $1,500)?
-2. **Intaglio (inner) surface**: learned DiGS vs geometric offset (margin gap <50μm)?
-3. **Phase planning**: v0 deterministic (AnchorFormer) → v1 diffusion (LION/Diffusion-SDF), or v0 diffusion from day 1?
+1. **Conditioning: PVD free-points** — simple ($50-200), architecturally faithful H3 (mask L2 to free points only), no encoder required.
+2. **Intaglio surface: geometric offset** — clinical <50μm margin gap is the threshold; learned DiGS inner surface unlikely to beat a geometric pipeline. Decided: keep intaglio as a deterministic offset from the prep boundary.
+3. **Phase: v0 deterministic first, v1 diffusion later** — ship AnchorFormer v0 fast, add LION/Diffusion-SDF in v1 if multi-modal sampling becomes a product requirement.
 
-## Two parallel pilots proposed
+## v0 single track (final)
 
-| Pilot | Stack | What it tests |
-|-------|-------|---------------|
-| (A) Deterministic v0 | AnchorFormer + DiGS + FlexiCubes | Does H3 alone carry us to <50μm margin gap? |
-| (B) H2 × H3 pilot | AnchorFormer-as-encoder + LION-style latent DDM + FlexiCubes | Does adding diffusion on top of H3 give a clinically meaningful multi-modal completion? |
+**v0 stack: PVD free-points + AnchorFormer + DiGS (outer) + geometric intaglio + FlexiCubes + PyMeshFix**
 
-Pilot (A) is the cheaper, faster first step. Pilot (B) is the v1 preview.
+| Component | Role | Cost (Lambda) |
+|-----------|------|---------------|
+| PVD free-points | H3 conditioning (loss mask on free points only) | $50-200 |
+| AnchorFormer | Deterministic completion encoder | $30-100 |
+| DiGS | SDF lifting — outer surface only | $100-300 |
+| Geometric offset | Intaglio (inner) surface — deterministic, <50μm | $0 (geometry lib) |
+| FlexiCubes | Mesh extraction (64³) | $5-10 |
+| PyMeshFix | Self-intersection repair | $0 (post-process) |
+| **Total** | | **~$2,200** |
+
+Single track, no parallel pilots. Ship v0 fast, iterate, add LION/Diffusion-SDF in v1 for multi-modal sampling.
 
 ## Compute budget (overall)
 
