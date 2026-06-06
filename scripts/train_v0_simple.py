@@ -110,7 +110,7 @@ def evaluate(model, loader, device):
     return np.mean(cds), np.std(cds)
 
 
-def main(split_path, n_epochs=20, batch_size=32, lr=1e-3, device='mps', n_points=4096, out_dir='models/v0_simple'):
+def main(split_path, n_epochs=20, batch_size=32, lr=1e-3, device='mps', n_points=4096, out_dir='models/v0_simple', max_train=None, max_val=None):
     with open(split_path) as f:
         s = json.load(f)
     train_files = s['train_files']
@@ -121,8 +121,15 @@ def main(split_path, n_epochs=20, batch_size=32, lr=1e-3, device='mps', n_points
 
     train_ds = V0Dataset(train_files, n_points=n_points)
     val_ds = V0Dataset(val_files, n_points=n_points)
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=2)
+    if max_train:
+        # subsample for debugging
+        train_ds.files = train_ds.files[:max_train]
+        print(f"[DEBUG] subsampled train to {max_train}")
+    if max_val:
+        val_ds.files = val_ds.files[:max_val]
+        print(f"[DEBUG] subsampled val to {max_val}")
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=0)
 
     model = CrownGenModel(n_fdi=28, n_points=n_points).to(device)
     n_params = sum(p.numel() for p in model.parameters())
@@ -175,6 +182,9 @@ if __name__ == "__main__":
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--device', default='mps', choices=['cpu', 'mps', 'cuda'])
     p.add_argument('--out-dir', default='/Users/alf/Projects/AlfResearch/dental-crown-gen/models/v0_simple')
+    p.add_argument('--max-train', type=int, default=None)
+    p.add_argument('--max-val', type=int, default=None)
     args = p.parse_args()
     main(args.split, n_epochs=args.epochs, batch_size=args.batch_size,
-         lr=args.lr, device=args.device, out_dir=args.out_dir)
+         lr=args.lr, device=args.device, out_dir=args.out_dir,
+         max_train=args.max_train, max_val=args.max_val)
