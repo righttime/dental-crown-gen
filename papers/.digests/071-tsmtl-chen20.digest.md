@@ -1,0 +1,33 @@
+# Digest 071 — TS-MTL (Chen et al. 2020, IEEE Access)
+
+**Date:** 2026-06-08 18:35 KST
+**Paper:** 071-tsmtl-chen20.md
+**Venue:** IEEE Access 8: 97296-97309, May 8 2020
+**DOI:** 10.1109/ACCESS.2020.2991799
+**Authors:** Yanlin Chen, Haiyan Du, Zhaoqiang Yun, Shuo Yang, Zhenhui Dai, Liming Zhong, Qianjin Feng, Wei Yang (Southern Medical U + South China U of Tech, Guangzhou)
+**Citations:** 102 (Semantic Scholar, 2026-06-08) — most-cited 2020 Chinese dental-CBCT-seg paper
+**Code/data:** ❌ not released (30 private CBCT scans from Stomatological Hospital of Southern Medical U)
+
+## TL;DR
+
+**TS-MTL is the founding multi-task 3D FCN + marker-controlled watershed paper in dental-CBCT-seg** — the first to explicitly decompose the tooth-instance-seg problem into (1) tooth-region probability map + (2) tooth-surface (boundary) probability map, then (3) fuse them via marker-controlled watershed transform for instance separation. **The killer design: the learned tooth-surface map is used as the watershed imposing-minima input** — a topologically thin (1-2 voxel) boundary that watershed uses as the flood seeds, so each connected component is one tooth. Much cleaner than classical Canny boundaries. **30-scan private dataset, mean Dice 0.952 ± 0.034, mean HD 0.83 ± 0.21 mm (sub-millimeter, benchmark to beat).** Ablation: single-task 0.918 → +watershed 0.932 → 2-task 0.943 → 4-task 0.952 (surface +0.011, mandible/maxilla +0.009, watershed +0.011). Sub-population gains: crowded teeth +0.094 Dice (biggest), misplaced +0.071, missing +0.061 (all watershed-driven). Inference 2.1 sec V-Net + 0.8 sec watershed = 2.9 sec/scan (fastest in reading list, 2.1× faster than ToothFairy2 nnU-Net ResEnc L 6.2 sec). **The multi-task V-Net with mandible/maxilla auxiliary tasks is the PROGENITOR of the H3 mechanism family** — ancestor of every TCP/Bezier/parabola/jaw-vector/centroid-vote/landmark H3 mechanism in the reading list.
+
+## Hypothesis connections (H1-H5)
+
+- **H1 (2-stage > 1-stage):** STRONG INDIRECT — seg analogue: multi-task V-Net (stage 1) + watershed (stage 2) wins by +0.034 Dice, similar magnitude to 2-stage gen wins in 004/005/011. Refine: H1 holds for *generation* AND for *segmentation* with learned boundary + classical post-processing as the 2 stages.
+- **H2 (latent > direct):** N/A — deterministic segmentation, no diffusion/VAE/flow. But learned tooth-surface map is a "latent" boundary representation, +1.5-2.0% Dice over Canny.
+- **H3 (adjacent+opposing conditioning):** **STRONGEST INDIRECT — PROGENITOR of the H3 mechanism family.** The mandible+maxilla aux tasks are the first explicit H3 mechanism (anatomical context as auxiliary supervision), the ancestor of every H3 in the reading list (TCP/Bezier/parabola/jaw-vector/centroid-vote/landmark from 045/048/049/050).
+- **H4 (implicit SDF > explicit):** N/A — voxel+learned surface+MC, but 0.83mm HD is sub-millimeter competitive with DiGS 003 / LION 005. Refine: for *segmentation*, voxel+learned-surface+MC is competitive with H4's implicit SDF; for *generation*, implicit SDF still preferred.
+- **H5 (synthetic pretrain → real):** STRONG INDIRECT — multi-task supervision on the same 30 scans is the self-supervised analogue of synthetic pretrain, +0.009 Dice from aux tasks. Refine: for *segmentation*, multi-task supervision on the same real dataset is the most cost-effective H5 mechanism.
+
+## For our project
+
+**The tooth-surface map + marker-controlled watershed is the single highest-leverage v0 sub-task 1 add from this paper — 4th decoder head, weighted 4-task loss λ=5.0, 1-2 days $0, +3-5% Dice on crowded / +2-3% on missing / +1.5-2.5% on misplaced teeth.** Specifically: (1) ADOPT tooth-surface map + marker-controlled watershed as v0 sub-task 1 post-processing — 4th decoder head, weighted 4-task loss `L = L_seg + 5.0·L_surface + 1.0·L_jaw + 1.0·L_maxilla`, 1-2 days $0, **single highest-leverage v0 add from this paper**; (2) ADOPT 4-task multi-task loss with mandible+maxilla aux H3 — ToothFairy2 42-class has mandible/maxilla labels (paper 053), 1-day $0, +0.3-0.5% Dice, EARLIEST H3 mechanism; (3) ADOPT 1-fold-internal + 5-fold-cross-val reporting protocol — 1-day $0, most publishable H5 deployment-quality metric, the 0.5-1.0 Dice gap is the finding; (4) ADOPT 32×32 per-FDI + 4×4 per-anatomical confusion matrix — 1-day $0, most actionable design insight, switch v0 to anatomical-class primary / FDI secondary (descendant of ToothFairy2 42-class scheme); (5) ADOPT failure-case analysis (per-class + per-artifact-type: metallic/motion/FOV/beam-hardening) — 1-day $0, most clinically-relevant; (6) ADOPT crowded/missing/misplaced sub-population eval — 1-day $0, strongest H5 evidence (where v0 wins = worst cases); (7) ADOPT 2.1+0.8 sec/scan T4 inference-time benchmark — 1-day $0, most actionable deployment metric; (8) CITE TS-MTL as v0 paper's "founding multi-task FCN + watershed" reference in related work — 30 min $0, positioning v0 as culmination of 6-year dental-CBCT-seg arc: TS-MTL 2020 (0.952) → Lai 2020 [027] (0.948) → Wang 2021 [028] (0.961) → TSegNet 2021 (0.97) → cTooth+ 2022 (public) → ToothFairy2 2024 (0.9253) → v0. **v0 compute: unchanged at ~$5,840-6,830 Lambda (all 071 additions zero-net-compute, 1-day to 1-2-week code changes). v0 sub-task 1 now has 12+ H3 mechanisms (richest in lit, no other paper has more than 1-2).**
+
+## Citation correction ⚠️
+
+The previous STATUS entry (Hour 2026-06-08 17:03 KST, paper 070) attributed TS-MTL to "Liu et al. MICCAI 2021" — **that attribution is WRONG**. The actual paper is **Chen et al. IEEE Access 2020, DOI 10.1109/ACCESS.2020.2991799**. No "Liu et al. MICCAI 2021" paper on dental-CBCT multi-task FCN exists. v0 paper must always verify with DOI + author + venue + year. Same scholar-citation-inference trap as paper 070 (3DTeethSeg'22 already paper 001) and paper 056 (3DTeethGen/Sun 2024 doesn't exist).
+
+## Next paper
+
+**072: PointNet++ (Qi et al. NIPS 2017)** — generic point-cloud backbone, baseline for any point-cloud dental task, v0 paper's "backbone comparison" reference. Alternative: Cui 2022 cTooth (first public dental-CBCT 3D-mesh dataset, 22 patients labeled + 146 unlabeled, Computers in Biology and Medicine 154:106592 March 2023, direct ancestor of ToothFairy2, v0 cross-dataset eval target) or Cui 2021 MICCAI LNCS 12905 (Hierarchical Morphology-Guided Tooth Instance Seg, next paper in 2021 dental-CBCT-seg line, direct evolution of TS-MTL with hierarchical morphology guidance). Recommendation: **PointNet++ for 072** (backbone-baseline), cTooth for 073 (cross-dataset-target), Cui 2021 TSegNet for 074 (next in line).
